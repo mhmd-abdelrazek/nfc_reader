@@ -28,9 +28,11 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Create GitHub Release
+      - name: Upload Release
         uses: ncipollo/release-action@v1
         with:
-          tag: "v${{ github.run_number }}"  # auto tag
+          tag: "v${{ github.run_number }}"
           name: "Release ${{ github.run_number }}"
-          files: build/app/outputs/flutter-apk/app-release.apk
+          body: "Automatic release from workflow"
+          artifacts: build/app/outputs/flutter-apk/app-release.apk
+          token: ${{ secrets.GITHUB_PAT }}
