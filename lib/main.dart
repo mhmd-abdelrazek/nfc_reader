@@ -1,10 +1,42 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 
 void main() {
-  runApp(const NfcDebugScreen());
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ),
+      home: const NfcDebugScreen(),
+    );
+  }
 }
 
 class NfcDebugScreen extends StatefulWidget {
@@ -15,6 +47,8 @@ class NfcDebugScreen extends StatefulWidget {
 }
 
 class _NfcDebugScreenState extends State<NfcDebugScreen> {
+  NFCAvailability? nfcAvailability;
+
   String result = "Press the button and scan NFC tag";
 
   Future<void> startReading() async {
@@ -24,7 +58,6 @@ class _NfcDebugScreenState extends State<NfcDebugScreen> {
       final NFCTag tag = await FlutterNfcKit.poll(
         timeout: const Duration(seconds: 20),
       );
-
       final buffer = StringBuffer();
 
       buffer.writeln("===== TAG INFO =====");
@@ -97,29 +130,54 @@ class _NfcDebugScreenState extends State<NfcDebugScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      FlutterNfcKit.nfcAvailability.then(
+        (value) => setState(() {
+          nfcAvailability = value;
+        }),
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("NFC Debug Reader")),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            ElevatedButton(
-              onPressed: startReading,
-              child: const Text("Start NFC Reading"),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  result,
-                  style: const TextStyle(fontSize: 13),
+      body: switch (nfcAvailability) {
+        null => Center(child: CircularProgressIndicator.adaptive()),
+        NFCAvailability.available => Padding(
+          padding: const EdgeInsets.all(12),
+          child: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: startReading,
+                  child: const Text("Start NFC Reading"),
                 ),
-              ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      result,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        _ => Center(
+          child: Text(
+            "No NFC In this device!",
+            style: const TextStyle(fontSize: 13),
+          ),
+        ),
+      },
     );
   }
 }
