@@ -35,4 +35,4 @@ jobs:
           name: "Release ${{ github.run_number }}"
           body: "Automatic release from workflow"
           artifacts: build/app/outputs/flutter-apk/app-release.apk
-          token: ${{ secrets.GITHUB_PAT }}
+          token: ${{ secrets.FLUTTER_RELEASE_TOKEN }}
